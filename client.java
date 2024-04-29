@@ -1,5 +1,6 @@
 import java.io.*;
 import java.net.*;
+import java.security.MessageDigest;
 import java.util.*;
 
 public class client {
@@ -24,6 +25,8 @@ public class client {
 
             sendstring(file.getfiletype(), outputStream, inputStream);
             sendstring(file.getfilename(), outputStream, inputStream);
+            sendstring(getMD5Checksum(file.getContent()), outputStream, inputStream);
+            System.out.println(getMD5Checksum(file.getContent()));
             sendcontent(pather,file.getContent(), outputStream, inputStream);
             sendstring(DISCONNECT_MESSAGE, outputStream, inputStream);
 
@@ -34,7 +37,7 @@ public class client {
             // sendstring(DISCONNECT_MESSAGE, outputStream, inputStream);
             
             clientSocket.close();
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
@@ -67,9 +70,8 @@ public class client {
         int msgLength = msgBytes.length; // getting the length of the message
         byte[] lengthBytes = Integer.toString(msgLength).getBytes(FORMAT); // changing message length into bytes with the specified format
 
-        long filesize = (path.length());
+        long filesize = (path.length()+100000);
         String filesizestring = Long.toString(filesize);
-        System.out.println(filesizestring);
         byte[] fileSizeBytes = filesizestring.getBytes("UTF-8");
         
         byte[] sendLengthBytes = new byte[BYTESIZE];
@@ -83,10 +85,38 @@ public class client {
         
         outputStream.write(fileSizeBytes);
         outputStream.write(msgBytes);
-        
-        byte[] responseBytes = new byte[2048];
-        int bytesRead = inputStream.read(responseBytes);
-        String response = new String(responseBytes, 0, bytesRead, FORMAT);
-        System.out.println(response);
+
+        while (true){
+            byte[] responseBytes = new byte[2048];
+            int bytesRead = inputStream.read(responseBytes);
+            String response = new String(responseBytes, 0, bytesRead, FORMAT);
+            if (response.equals("REQ")){
+                outputStream.write(msgBytes);
+            }
+            else if (response.equals("File content received")){
+                System.out.println(response);
+                break;
+            }
+        }
+     
     }
+
+
+    public static byte[] createChecksum(byte[] bytes) throws Exception {
+        MessageDigest md = MessageDigest.getInstance("MD5");
+        md.update(bytes);
+        return md.digest();
+    }
+
+    public static String getMD5Checksum(byte[] bytes) throws Exception {
+        byte[] b = createChecksum(bytes);
+        StringBuilder result = new StringBuilder();
+        for (int i = 0; i < b.length; i++) {
+            result.append(Integer.toString((b[i] & 0xff) + 0x100, 16).substring(1));
+        }
+        return result.toString();
+    }
+
+
+
 }

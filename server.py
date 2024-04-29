@@ -1,6 +1,8 @@
+import hashlib
 import socket
 import threading
 import os
+import sys
 import time
 
 BYTESIZE = 64
@@ -47,13 +49,35 @@ def handle_client(conn, addr):
                     
                     if msg_length3:
                         msg_length3 = int(msg_length3)
-                        print(msg_length3)
-                        content = conn.recv(msg_length3)
-                
-                        conn.send("File content received".encode(FORMAT))
-                        writer(fullpath, content)
-                        clear_buffer(conn, msg_length3)
+                        checksumrec = conn.recv(msg_length3).decode(FORMAT)
+                        print(f"rec checksum {checksumrec}")
+                        conn.send("checksum received".encode(FORMAT))
 
+                        msg_length4 = conn.recv(BYTESIZE).decode(FORMAT)
+                        if msg_length4:
+                            msg_length4 = int(msg_length4)
+                            content = conn.recv(msg_length4)
+                            checksum = calculate_checksum(content)
+                            print(f"calculated checksum {checksum}")
+
+                            while checksum != checksumrec:
+                                conn.send("REQ".encode(FORMAT))
+                                content = conn.recv(msg_length4)
+                                checksum = calculate_checksum(content)
+                                print(checksum)
+                                
+
+
+                            conn.send("File content received".encode(FORMAT))
+                            writer(fullpath, content)
+                            clear_buffer(conn, msg_length4)
+
+
+
+                                
+                
+
+                        
 
 
             
@@ -107,6 +131,12 @@ def clear_buffer(conn, size):
             # Handle socket errors if necessary
             print("Socket error:", e)
             break
+
+def calculate_checksum(data):
+    """Calculate the MD5 checksum of byte data."""
+    hasher = hashlib.md5()
+    hasher.update(data)
+    return hasher.hexdigest()
 
 print("[STARTING] serer is starting....") 
 start()
