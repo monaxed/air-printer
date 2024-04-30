@@ -4,17 +4,17 @@ import java.util.*;
 
 public class client {
     static Scanner input = new Scanner(System.in);
-    public static void main(String[] args) throws IOException {
-        packetHandler filer = new packetHandler("C:/Programming/Server/tester.pdf");
+    public static void main(String[] args) throws IOException, InterruptedException {
+        System.out.println("Enter File Path: ");
+        String filePath = input.nextLine();
+        packetHandler filer = new packetHandler(filePath);
+
         String type = filer.getfiletype();
         String fileName = filer.getfilename();
-        String filePath;
         String serverAddress = "192.168.1.11";
         String FORMAT = "UTF-8";
         int serverPort = 5050;
 
-        System.out.println("Enter File Path: ");
-        filePath = input.nextLine();
 
         try {
             Socket clientSocket = new Socket(serverAddress, serverPort);
@@ -26,6 +26,7 @@ public class client {
 
             // send file type
             outputStream.write(type.getBytes(FORMAT));
+            Thread.sleep(2000);
 
             //listen
             byte[] responseBytes = new byte[2048];
@@ -36,6 +37,7 @@ public class client {
 
             // Send file name
             outputStream.write(fileName.getBytes(FORMAT));
+            Thread.sleep(2000);
             // listen
             // bytesRead = inputStream.read(responseBytes);
             // response = new String(responseBytes, 0, bytesRead, FORMAT);
