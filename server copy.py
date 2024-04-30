@@ -5,7 +5,7 @@ import os
 import sys
 import time
 
-BYTESIZE = 1024
+BYTESIZE = 64
 PORT = 5050
 SERVER = socket.gethostbyname(socket.gethostname())
 ADDR = (SERVER, PORT)
@@ -13,59 +13,69 @@ FORMAT = 'utf-8'
 DISCONNECT_MESSAGE = "!DSICONNECT"
 
 CURRENTDIR = os.getcwd()
-pather = ""
 
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.bind(ADDR)
 
 def handle_client(conn, addr):
     print(f"[NEW CONNECTION] {addr}  connected")
+    pather = ""
+
     connected = True
     while connected:
-        msg = conn.recv(1024).decode()
-        print(msg)
-        # conn.send("File type receive".encode(FORMAT))
-
-        if msg == DISCONNECT_MESSAGE or msg == "":
-            connected = False
-        
-        if msg == "application/pdf":
-            name = conn.recv(1024).decode()
-            print(name)
-            # conn.send("name received".encode(FORMAT))
-            devicename = socket.gethostbyaddr(addr[0])[0]
-            foldercreator(devicename)
+        msg_length = conn.recv(BYTESIZE).decode(FORMAT)
+        if msg_length:
+            msg_length = int(msg_length)
+            msg = conn.recv(msg_length).decode(FORMAT)
+            if msg == DISCONNECT_MESSAGE:
+                connected = False;
             
-            content = b""
-            done = False
-            while True:
-                data = conn.recv(1024)
-                if not data:
-                    break
-                content += data
-                if content.endswith(b"<END>"):
-                    break
+            if msg == "application/pdf":
+                conn.send("PDF file type received".encode(FORMAT))
+                name = socket.gethostbyaddr(addr[0])[0]
+                pather = CURRENTDIR + "/received" +f"/{name}"
+                foldercreator(name)
 
-            # while not done:
-            #     data = conn.recv(1024)
-            #     if content[-5:] == b"<END>" or data == "":
-            #         done = True
-            #         print("stopped")
-            #     else:
-            #         content += data
-            #         print("mistake")
-
+                msg_length2 = conn.recv(BYTESIZE).decode(FORMAT)
                 
-            conn.send("File content received".encode(FORMAT))
-            path = pather + f"/{name}"
-            writer(path, content)
-            clear_buffer(conn, len(content))
-            print("done")
+                if msg_length2:
+                    msg_length2 = int(msg_length2)
+                    filename = conn.recv(msg_length2).decode(FORMAT)
+                    conn.send("Filename received".encode(FORMAT))
+
+                    fullpath = pather +f"/{filename}"
+
+                    msg_length3 = conn.recv(BYTESIZE).decode(FORMAT)
+
+                    if msg_length3:
+                            msg_length3 = int(msg_length3)
+                            content = conn.recv(msg_length3)
+                    
+
+                            # while checksum != checksumrec:
+                            #     conn.send("REQ".encode(FORMAT))
+                            #     content = conn.recv(msg_length4)
+                            #     checksum = calculate_checksum(content)
+                            #     print(checksum)
+                                
+
+
+                            conn.send("File content received".encode(FORMAT))
+                            writer(fullpath, content)
+                            clear_buffer(conn, msg_length3)
+
+
+
+                                
+                
+
+                        
+
+
             
-            # print(f"[{addr}] {msg}")
-            # conn.send("Msg received".encode(FORMAT))
+            print(f"[{addr}] {msg}")
+            conn.send("Msg received".encode(FORMAT))
     conn.close()
-    
     
 
 def start():
@@ -80,26 +90,22 @@ def start():
 
 def foldercreator(devicename):
     path = CURRENTDIR + "/received"
-    global pather
     if os.path.exists(path):
         path2 = path + f"/{devicename}"
 
         if not os.path.exists(path2):
             os.makedirs(path2)
-            pather = path2
         else:
             pass
 
     else:
         dir = path + f"/{devicename}"
         os.makedirs(dir)
-        pather = dir
 
 def writer(path, content):
     file = open(path, "wb")
     file.write(content)
     file.close()
-    print("here")
 
 def clear_buffer(conn, size):
     # Set a timeout to prevent blocking indefinitely

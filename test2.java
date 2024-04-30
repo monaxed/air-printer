@@ -1,20 +1,15 @@
 import java.io.*;
 import java.net.*;
-import java.util.*;
 
-public class client {
-    static Scanner input = new Scanner(System.in);
+public class test2 {
     public static void main(String[] args) throws IOException {
         packetHandler filer = new packetHandler("C:/Programming/Server/tester.pdf");
         String type = filer.getfiletype();
         String fileName = filer.getfilename();
-        String filePath;
+        String filePath = "C:/Programming/Server/tester.pdf";
         String serverAddress = "192.168.1.11";
         String FORMAT = "UTF-8";
         int serverPort = 5050;
-
-        System.out.println("Enter File Path: ");
-        filePath = input.nextLine();
 
         try {
             Socket clientSocket = new Socket(serverAddress, serverPort);

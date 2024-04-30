@@ -13,6 +13,11 @@ public class tester {
         System.out.println(filer.getfiletype());
         System.out.println(filer.getfilename());
 
+        byte[] endBytes = "<END>".getBytes();
+        String endString = new String(endBytes);
+        System.out.println(endBytes);
+
+
     }
     
 }
