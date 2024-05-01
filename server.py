@@ -4,6 +4,7 @@ import threading
 import os
 import sys
 import time
+import PrintingSRC as printer
 
 BYTESIZE = 1024
 PORT = 5050
@@ -61,6 +62,7 @@ def handle_client(conn, addr):
             writer(path, content)
             clear_buffer(conn, len(content))
             print("done")
+            printer.calltoprint(path)
             
             # print(f"[{addr}] {msg}")
             # conn.send("Msg received".encode(FORMAT))
