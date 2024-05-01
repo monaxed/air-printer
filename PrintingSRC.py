@@ -53,26 +53,28 @@ def setprinter(name):
     global printer_name 
     printer_name = name
 
-def calltoprint(path):
+def calltoprint(path, user):
     """
     Public function to be called to print
 
     :param path: path of file to be printed
+    :param user: User printing the document
     :type path: String
+    :type user: String
     """
     global printer_name
     pdf_file = path
-    filename = os.path.abspath(path)
+    filename = os.path.basename(path)
     if printer_name == "":
         print("[PRINT JOB] No printer specified!")
         print("[PRINTER] Printer is set to default....")
-        print(f"[PRINT JOB] Printing the document {filename}")
+        print(f"[PRINT JOB] Printing the document --> [{filename}]  FROM [{user}]")
         print_pdf(pdf_file, printer_name)
 
     else:
         print(f"[PRINT JOB] Printer specified!")
         print(f"[PRINTER] Printer is set to {printer_name}")
-        print(f"[PRINT JOB] Printing the document {filename}")
+        print(f"[PRINT JOB] Printing the document --> {filename}  FROM [{user}]")
         print_pdf(pdf_file, printer_name)
     
 # Call the function to get the printer names

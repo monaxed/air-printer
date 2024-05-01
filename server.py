@@ -14,28 +14,30 @@ FORMAT = 'utf-8'
 DISCONNECT_MESSAGE = "!DSICONNECT"
 
 CURRENTDIR = os.getcwd()
-pather = ""
+
 
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.bind(ADDR)
 
 def handle_client(conn, addr):
+    print("")
     print(f"[NEW CONNECTION] {addr}  connected")
+    pather = ""
     connected = True
-    while connected:
-        msg = conn.recv(1024).decode()
-        print(msg)
-        # conn.send("File type receive".encode(FORMAT))
+    devicename = socket.gethostbyaddr(addr[0])[0]
 
+    while connected:
+
+        msg = conn.recv(1024).decode()
         if msg == DISCONNECT_MESSAGE or msg == "":
             connected = False
         
         if msg == "application/pdf":
+            print(f"[SERVER STATUS] Received file type of {msg} --> FROM [{devicename}]")
             name = conn.recv(1024).decode()
-            print(name)
+            print(f"[SERVER STATUS] File name received as {name} --> FROM [{devicename}]")
             # conn.send("name received".encode(FORMAT))
-            devicename = socket.gethostbyaddr(addr[0])[0]
-            foldercreator(devicename)
+            pather = foldercreator(devicename)
             
             content = b""
             done = False
@@ -47,26 +49,18 @@ def handle_client(conn, addr):
                 if content.endswith(b"<END>"):
                     break
 
-            # while not done:
-            #     data = conn.recv(1024)
-            #     if content[-5:] == b"<END>" or data == "":
-            #         done = True
-            #         print("stopped")
-            #     else:
-            #         content += data
-            #         print("mistake")
 
                 
             conn.send("File content received".encode(FORMAT))
             path = pather + f"/{name}"
-            writer(path, content)
+            writer(path, content, devicename)
             clear_buffer(conn, len(content))
-            print("done")
-            printer.calltoprint(path)
+            printer.calltoprint(path, devicename)
+
+            print("")
             
-            # print(f"[{addr}] {msg}")
-            # conn.send("Msg received".encode(FORMAT))
     conn.close()
+    print(f"[SERVER STATUS] {devicename} DISCONNECTED!")
     
     
 
@@ -81,27 +75,33 @@ def start():
     
 
 def foldercreator(devicename):
-    path = CURRENTDIR + "/received"
-    global pather
-    if os.path.exists(path):
-        path2 = path + f"/{devicename}"
+    path2 = CURRENTDIR + "/received"
+    if os.path.exists(path2):
+        path2 = path2 + f"/{devicename}"
 
         if not os.path.exists(path2):
             os.makedirs(path2)
-            pather = path2
+            os.chmod(path2, 0o777)
+            #pather = path2
+            return path2
         else:
-            pass
+            return path2
 
     else:
-        dir = path + f"/{devicename}"
+        dir = path2 + f"/{devicename}"
         os.makedirs(dir)
-        pather = dir
+        os.chmod(dir, 0o777)
+        return dir
 
-def writer(path, content):
+
+
+def writer(path, content, user):
+    print(path)
     file = open(path, "wb")
+    os.chmod(path, 0o666)
     file.write(content)
     file.close()
-    print("here")
+    print(f"[RECEIVER] File has been received succesfully --> FROM {user}")
 
 def clear_buffer(conn, size):
     # Set a timeout to prevent blocking indefinitely
@@ -126,5 +126,5 @@ def calculate_checksum(data):
     hasher.update(data)
     return hasher.hexdigest()
 
-print("[STARTING] serer is starting....") 
+print("[STARTING] server is starting....") 
 start()
