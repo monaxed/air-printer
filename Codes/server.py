@@ -5,6 +5,7 @@ import os
 import sys
 import time
 import PrintingSRC as printer
+import fileClass 
 
 BYTESIZE = 1024
 PORT = 5050
@@ -14,12 +15,27 @@ FORMAT = 'utf-8'
 DISCONNECT_MESSAGE = "!DSICONNECT"
 
 CURRENTDIR = os.getcwd()
+QUE = [] #global print queue
 
 
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.bind(ADDR)
 
+#To handle main print queue coming from various device
+def printque():
+    global QUE
+
+    while True:
+        if len(QUE) !=0:
+            for i in QUE:
+                i.sendprintjob()
+                QUE.pop(QUE.index(i))
+
+
 def handle_client(conn, addr):
+    global QUE
+
+
     print("")
     print(f"[NEW CONNECTION] {addr}  connected")
     pather = ""
@@ -55,7 +71,10 @@ def handle_client(conn, addr):
             path = pather + f"/{name}"
             writer(path, content, devicename)
             clear_buffer(conn, len(content))
-            printer.calltoprint(path, devicename)
+            newprintjob = fileClass.filer(devicename, path) #sent file is packed into a class, which then will be printed from the class
+
+            QUE.append(newprintjob) #global print queue
+            #printer.calltoprint(path, devicename)
 
             print("")
             
@@ -70,7 +89,9 @@ def start():
     while True:
         conn, addr = server.accept()
         thread = threading.Thread(target = handle_client, args =(conn, addr))
+        thread2 = threading.Thread(target = printque)
         thread.start()
+        thread2.start()
         print(f"[ACTIVE CONNECTIONS] {threading.active_count()-1}")
     
 

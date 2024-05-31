@@ -11,7 +11,7 @@ public class client {
 
         String type = filer.getfiletype();
         String fileName = filer.getfilename();
-        String serverAddress = "192.168.1.11";
+        String serverAddress = "192.168.1.15";
         String FORMAT = "UTF-8";
         int serverPort = 5050;
 
